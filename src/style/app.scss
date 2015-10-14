@@ -1,0 +1,64 @@
+$nav-primary-color: #311B26;
+$nav-secondary-color: #C0B9BA;
+
+header {
+  padding-top: 0.5em;
+  display: flex;
+  background-color: $nav-secondary-color;
+  justify-content: space-between;
+
+  > h1 {
+    flex-grow: 1;
+  }
+
+  > .img-container {
+    height: 0;
+    z-index: 1;
+    flex-shrink: 0;
+
+    > img {
+      height: 8.5em;
+      padding: 0 2em;
+      transition: opacity 0.5s;
+    }
+  }
+
+  > .logout {
+    align-self: flex-end;
+  }
+}
+
+.top-bar {
+  .name img {
+    height: 2em;
+  }
+}
+
+.sticky {
+  border-bottom: 0.5em solid $nav-secondary-color;
+}
+
+body:not(.f-topbar-fixed) {
+  .top-bar:not(.expanded) {
+    padding-left: 11em;
+  }
+
+  .name {
+    width: 0;
+  }
+}
+
+.f-topbar-fixed {
+  .img-container > img {
+    opacity: 0;
+  }
+}
+
+main {
+  margin: 1.5em;
+  height: 4000px;
+}
+
+.full.row {
+  max-width: 100em;
+}
