@@ -1,129 +1,97 @@
 import React, { Component, PropTypes } from 'react';
+import { createStore, combineReducers } from 'redux';
+import { connectReduxForm, reducer as formReducer } from 'redux-form';
+import { connect } from 'react-redux';
 import { render } from 'react-dom';
+import classNames from 'classnames';
 import autobind from 'autobind';
 import './style/app.scss';
 
-const newParty = {
-  formlets: {
-    personName: {
-      formlets: {},
-      fields: {
-        firstName: {
-          value: '',
-          label: 'First name',
-          name: 'firstName',
-          validators: []
-        },
-        middleName: {
-          value: '',
-          label: 'Middle name',
-          name: 'middleName',
-          validators: []
-        },
-        lastName: {
-          value: '',
-          label: 'Last name',
-          name: 'lastName',
-          validators: []
-        },
-        suffix: {
-          value: '',
-          label: 'Suffix',
-          name: 'suffix',
-          validators: []
-        }
-      }
+/*
+  this data can be writted to the global object by a script rendered by
+  the server
+  ------------------------------------------------------------------------------
+*/
+window.__init_data = {
+  initialValues: {
+    firstName: 'STORED_FIRST_NAME'
+  },
+  config: {
+    form: 'new-party',
+    fields: ['firstName', 'middleName', 'lastName', 'suffix'],
+    asyncValidate(data) {
+      console.log('async', JSON.stringify(data));
+      return new Promise(resolve => resolve({
+        suffix: 'Suffix is too suffixy'
+      }));
     }
   },
-  fields: {
-    favoriteColor: {
-      name: 'favoriteColor',
-      label: 'Favorite color',
-      value: '',
-      validators: []
-    }
+  submitCallback(data) {
+    console.log('submit', data);
   }
-}
+};
+/*
+  ------------------------------------------------------------------------------
+*/
 
+const reducer = combineReducers({form: formReducer});
+const store = createStore(reducer);
 
-class LabeledTextInput extends Component {
-  static defaultProps = {
-    validators: []
-  }
+const { config, initialValues, submitCallback } = window.__init_data;
+
+@connectReduxForm(config)
+class NewPartyForm extends Component {
   static propTypes = {
-    validators: PropTypes.arrayOf(PropTypes.func).isRequired
-  }
-  constructor(props) {
-    super(props);
-    this.state = {error: null};
-  }
-  @autobind async handleChange() {
-    const {validators} = this.props;
-    const value = new Promise(resolve => resolve(this.refs.input.value));
-    try {
-      await * validators.map(validator => value.then(validator));
-      this.setState({error: null});
-    } catch (error) {
-      this.setState({error});
-    }
+    fields: PropTypes.shape({
+      firstName: PropTypes.object.isRequired,
+      middleName: PropTypes.object.isRequired,
+      lastName: PropTypes.object.isRequired,
+      suffix: PropTypes.object.isRequired
+    }).isRequired,
+    handleSubmit: PropTypes.func.isRequired
   }
   render() {
-    const {error} = this.state;
-    const {value, label, name} = this.props;
-    return <div className={error ? 'error' : null}>
-      <label>
-        <span>{label}</span>
-        <input ref='input' type='text' placeholder={label}
-          onChange={this.handleChange}
-          onBlur={this.handleChange}
-          {...{value, name}}
-        />
-      </label>
-      <small className='error'>{error ? error.message : ''}</small>
-    </div>;
-  }
-}
-
-const PersonName = props => {
-  const {firstName, middleName, lastName, suffix} = props.fields;
-  return <div className='row'>
-    <div className='column medium-3'>
-      <LabeledTextInput {...firstName} />
-    </div>
-    <div className='column medium-3'>
-      <LabeledTextInput {...middleName} />
-    </div>
-    <div className='column medium-4'>
-      <LabeledTextInput {...lastName} />
-    </div>
-    <div className='column medium-2'>
-      <LabeledTextInput {...suffix} />
-    </div>
-  </div>;
-}
-
-const NewParty = props => {
-  const {favoriteColor} = props.fields;
-  const {personName} = props.formlets;
-  return <section className='column'>
-    <fieldset>
-      <legend>New party</legend>
-      <div className='row'>
-        <div className='column medium-4'>
-          <LabeledTextInput {...favoriteColor} />
+    const {
+      handleSubmit,
+      fields: { firstName, middleName, lastName, suffix }
+    } = this.props;
+    return <form onSubmit={handleSubmit(submitCallback)} data-abide>
+      <fieldset>
+        <legend>New party</legend>
+        <div className='row'>
+          <div className={classNames('column','medium-3', {error: firstName.error})}>
+            <label>
+              <span>First name</span>
+              <input type='text' placeholder='First name' {...firstName} />
+              <small className='error'>{firstName.error}</small>
+            </label>
+          </div>
+          <div className={classNames('column','medium-3', {error: middleName.error})}>
+            <label>
+              <span>Middle name</span>
+              <input type='text' placeholder='Middle name' {...middleName} />
+              <small className='error'>{middleName.error}</small>
+            </label>
+          </div>
+          <div className={classNames('column','medium-4', {error: lastName.error})}>
+            <label>
+              <span>Last name</span>
+              <input type='text' placeholder='Last name' {...lastName} />
+              <small className='error'>{lastName.error}</small>
+            </label>
+          </div>
+          <div className={classNames('column','medium-2', {error: suffix.error})}>
+            <label>
+              <span>Suffix</span>
+              <input type='text' placeholder='suffix' {...suffix} />
+              <small className='error'>{suffix.error}</small>
+            </label>
+          </div>
         </div>
-      </div>
-      <PersonName {...personName} />
-    </fieldset>
-  </section>;
-}
-
-class App extends Component {
-  render() {
-    return <form data-abide>
-      <NewParty {...newParty} />
-    </form>;
+        <button className='tiny button' type='submit'>Submit</button>
+      </fieldset>
+    </form>
   }
 }
 
-render(<App />, document.querySelector('main'));
+render(<NewPartyForm {...{initialValues, store}} />, document.querySelector('main'));
